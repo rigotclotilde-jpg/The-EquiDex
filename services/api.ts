@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { User, JobOffer, ChatMessage } from '../types';
 
@@ -8,9 +7,17 @@ const NETWORK_DELAY = 800;
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- AI CONFIGURATION (SERVER SIDE SIMULATION) ---
-// Dans une architecture réelle, ceci tourne sur le serveur.
-// La clé API n'est jamais exposée au client.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialisation sécurisée pour éviter le crash "White Screen" si la clé ou process.env manque
+let ai: GoogleGenAI | null = null;
+try {
+    if (process.env.API_KEY) {
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    } else {
+        console.warn("API_KEY manquante. EquiBot sera désactivé.");
+    }
+} catch (error) {
+    console.error("Erreur initialisation GoogleGenAI:", error);
+}
 
 // --- MOCK DATABASE ---
 
@@ -147,6 +154,10 @@ export const api = {
     },
     chat: {
         sendMessage: async (history: ChatMessage[], newMessage: string): Promise<string> => {
+            if (!ai) {
+                return "Le service EquiBot est temporairement indisponible (Clé API manquante ou erreur configuration).";
+            }
+
             // Dans une vraie Edge Function, ceci tourne sur un serveur sécurisé
             try {
                 // Conversion de l'historique au format attendu par Gemini SDK
