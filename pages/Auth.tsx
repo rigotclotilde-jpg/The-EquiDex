@@ -10,7 +10,7 @@ type RegType = 'cavalier' | 'pro';
 export const Auth: React.FC = () => {
     const [regType, setRegType] = useState<RegType>('cavalier');
     const navigate = useNavigate();
-    const { login } = useUserContext(); // On garde login du context pour la mise à jour d'état global
+    const { login } = useUserContext(); 
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -30,7 +30,6 @@ export const Auth: React.FC = () => {
         setErrorMsg(null);
 
         try {
-            // 1. Authentification Supabase
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: loginEmail,
                 password: loginPass,
@@ -39,16 +38,20 @@ export const Auth: React.FC = () => {
             if (error) throw error;
 
             if (data.user) {
-                // 2. Mise à jour du contexte utilisateur (récupère le profil)
-                // Note: Le type n'est pas nécessaire ici car api.auth.login va le lire dans la DB
-                await login(loginEmail, 'cavalier'); 
-                
-                // 3. Redirection basée sur le rôle (on doit lire le profil pour savoir)
+                // On tente de charger le profil
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('role')
                     .eq('id', data.user.id)
                     .single();
+
+                // Si pas de profil, c'est peut-être un user Auth sans Profil DB (cas rare), on tente de le réparer
+                if (!profile) {
+                    console.warn("Profil manquant, tentative de réparation...");
+                    // On ne fait rien ici pour l'instant, api.auth.login va gérer le fallback
+                }
+
+                await login(loginEmail, 'cavalier'); 
 
                 if (profile?.role === 'pro') {
                     navigate('/pro-dashboard');
@@ -71,24 +74,55 @@ export const Auth: React.FC = () => {
         setErrorMsg(null);
 
         try {
-            // Métadonnées à passer au trigger SQL
-            const metaData = {
-                full_name: regType === 'pro' ? regCompany : regName,
-                role: regType
-            };
-
+            const fullName = regType === 'pro' ? regCompany : regName;
+            
+            // 1. Création du compte Auth
             const { data, error } = await supabase.auth.signUp({
                 email: regEmail,
                 password: regPass,
                 options: {
-                    data: metaData
+                    data: {
+                        full_name: fullName,
+                        role: regType
+                    }
                 }
             });
 
             if (error) throw error;
 
             if (data.user) {
-                // Connexion automatique après inscription réussie
+                // 2. Vérification et Création Manuelle du Profil (Fallback)
+                // On attend 500ms pour laisser le temps au Trigger SQL de se lancer
+                await new Promise(r => setTimeout(r, 500));
+
+                const { data: existingProfile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', data.user.id)
+                    .single();
+
+                // Si le profil n'existe pas encore (Trigger échoué), on le crée manuellement
+                if (!existingProfile) {
+                    console.log("Trigger SQL silencieux, création manuelle du profil...");
+                    const { error: insertError } = await supabase
+                        .from('profiles')
+                        .insert([
+                            {
+                                id: data.user.id,
+                                email: regEmail,
+                                full_name: fullName,
+                                role: regType,
+                                points: 100
+                            }
+                        ]);
+                    
+                    if (insertError) {
+                        console.error("Erreur création manuelle profil:", insertError);
+                        // On continue quand même, l'utilisateur sera en mode démo mais inscrit
+                    }
+                }
+
+                // 3. Connexion
                 await login(regEmail, regType);
                 if (regType === 'pro') {
                     navigate('/pro-dashboard');
@@ -311,4 +345,3 @@ export const Auth: React.FC = () => {
         </div>
     );
 };
-    
