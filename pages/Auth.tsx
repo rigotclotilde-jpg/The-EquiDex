@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, Loader2, AlertCircle } from 'lucide-react';
+import { Star, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useUserContext } from '../context/UserContext';
 
@@ -13,6 +13,7 @@ export const Auth: React.FC = () => {
     const { login } = useUserContext(); 
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
     // États formulaires
     const [loginEmail, setLoginEmail] = useState('');
@@ -28,6 +29,7 @@ export const Auth: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
         setErrorMsg(null);
+        setSuccessMsg(null);
 
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -38,22 +40,19 @@ export const Auth: React.FC = () => {
             if (error) throw error;
 
             if (data.user) {
-                // On tente de charger le profil
+                // On tente de charger le profil pour vérifier s'il existe vraiment
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('role')
                     .eq('id', data.user.id)
                     .single();
 
-                // Si pas de profil, c'est peut-être un user Auth sans Profil DB (cas rare), on tente de le réparer
-                if (!profile) {
-                    console.warn("Profil manquant, tentative de réparation...");
-                    // On ne fait rien ici pour l'instant, api.auth.login va gérer le fallback
-                }
-
+                // Connexion via le contexte (qui gère le mode démo si profil manquant)
                 await login(loginEmail, 'cavalier'); 
 
-                if (profile?.role === 'pro') {
+                // Redirection intelligente
+                const targetRole = profile?.role || 'cavalier'; // Fallback cavalier
+                if (targetRole === 'pro') {
                     navigate('/pro-dashboard');
                 } else {
                     navigate('/rider-dashboard');
@@ -61,7 +60,9 @@ export const Auth: React.FC = () => {
             }
         } catch (error: any) {
             console.error("Erreur connexion:", error);
-            setErrorMsg(error.message || "Identifiants incorrects.");
+            setErrorMsg(error.message === "Invalid login credentials" 
+                ? "Email ou mot de passe incorrect." 
+                : error.message);
         } finally {
             setIsLoading(false);
         }
@@ -72,6 +73,7 @@ export const Auth: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
         setErrorMsg(null);
+        setSuccessMsg(null);
 
         try {
             const fullName = regType === 'pro' ? regCompany : regName;
@@ -90,20 +92,28 @@ export const Auth: React.FC = () => {
 
             if (error) throw error;
 
-            if (data.user) {
-                // 2. Vérification et Création Manuelle du Profil (Fallback)
-                // On attend 500ms pour laisser le temps au Trigger SQL de se lancer
-                await new Promise(r => setTimeout(r, 500));
+            // CAS 1 : Inscription réussie MAIS email non confirmé (Pas de session)
+            if (data.user && !data.session) {
+                setSuccessMsg("Compte créé ! Veuillez vérifier vos emails pour confirmer votre inscription avant de vous connecter.");
+                setIsLoading(false);
+                return; // On s'arrête là, on ne peut pas créer le profil tant que l'email n'est pas validé
+            }
+
+            // CAS 2 : Inscription réussie AVEC session (Email confirmation désactivé)
+            if (data.user && data.session) {
+                
+                // 2. Fallback Création Profil : Si le trigger SQL n'a pas marché, on force l'écriture
+                // On attend un court instant que le trigger potentiel se termine
+                await new Promise(r => setTimeout(r, 1000));
 
                 const { data: existingProfile } = await supabase
                     .from('profiles')
                     .select('id')
                     .eq('id', data.user.id)
-                    .single();
+                    .maybeSingle();
 
-                // Si le profil n'existe pas encore (Trigger échoué), on le crée manuellement
                 if (!existingProfile) {
-                    console.log("Trigger SQL silencieux, création manuelle du profil...");
+                    console.log("Profil introuvable, création manuelle forcée...");
                     const { error: insertError } = await supabase
                         .from('profiles')
                         .insert([
@@ -117,12 +127,12 @@ export const Auth: React.FC = () => {
                         ]);
                     
                     if (insertError) {
-                        console.error("Erreur création manuelle profil:", insertError);
-                        // On continue quand même, l'utilisateur sera en mode démo mais inscrit
+                        console.error("Erreur création profil:", insertError);
+                        // On ne bloque pas, mais l'user sera en mode démo
                     }
                 }
 
-                // 3. Connexion
+                // 3. Connexion automatique
                 await login(regEmail, regType);
                 if (regType === 'pro') {
                     navigate('/pro-dashboard');
@@ -132,7 +142,7 @@ export const Auth: React.FC = () => {
             }
         } catch (error: any) {
             console.error("Erreur inscription:", error);
-            setErrorMsg(error.message || "Erreur lors de l'inscription.");
+            setErrorMsg(error.message || "Une erreur est survenue lors de l'inscription.");
         } finally {
             setIsLoading(false);
         }
@@ -146,8 +156,14 @@ export const Auth: React.FC = () => {
                 <h2 className="text-lg md:text-xl text-gray-500 font-normal">Accédez à votre espace ou rejoignez l'Éperon d'Or.</h2>
                 
                 {errorMsg && (
-                    <div className="mt-6 bg-red-50 text-red-600 px-4 py-3 rounded-lg inline-flex items-center gap-2 text-sm font-sans">
+                    <div className="mt-6 bg-red-50 text-red-600 px-4 py-3 rounded-lg inline-flex items-center gap-2 text-sm font-sans border border-red-100 animate-fade-in">
                         <AlertCircle size={16} /> {errorMsg}
+                    </div>
+                )}
+
+                {successMsg && (
+                    <div className="mt-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg inline-flex items-center gap-2 text-sm font-sans border border-green-100 animate-fade-in">
+                        <CheckCircle size={16} /> {successMsg}
                     </div>
                 )}
             </div>
