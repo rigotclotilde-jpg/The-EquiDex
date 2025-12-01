@@ -3,18 +3,12 @@ import { User, JobOffer, ChatMessage } from '../types';
 import { supabase } from '../lib/supabase';
 
 // --- AI HELPER ---
-// Fonction robuste pour récupérer la clé API où qu'elle soit
 const getApiKey = () => {
-    // 1. Essayer l'injection Vite (défini dans vite.config.ts)
+    // @ts-ignore
     if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        // @ts-ignore
         return process.env.API_KEY;
     }
-    // 2. Essayer les variables Vite standards (import.meta.env)
-    // @ts-ignore
-    if (import.meta.env && import.meta.env.API_KEY) return import.meta.env.API_KEY;
-    // @ts-ignore
-    if (import.meta.env && import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-    
     return "";
 };
 
@@ -35,56 +29,74 @@ export const api = {
         login: async (email: string, type: 'cavalier' | 'pro'): Promise<User> => {
             await new Promise(r => setTimeout(r, 500));
 
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('email', email)
-                .maybeSingle();
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', email)
+                    .maybeSingle();
 
-            if (!profile) {
-                console.warn(`⚠️ Aucun profil trouvé pour ${email}. Mode Démo.`);
+                if (error) throw error;
+
+                if (!profile) {
+                    console.warn(`⚠️ Aucun profil trouvé pour ${email}. Mode Démo.`);
+                    return {
+                        id: 'demo_user',
+                        name: type === 'cavalier' ? "Utilisateur Démo" : "Écurie Démo",
+                        email: email,
+                        type: type,
+                        points: 100,
+                        unlockedArticles: []
+                    };
+                }
+
                 return {
-                    id: 'demo_user',
-                    name: type === 'cavalier' ? "Utilisateur Démo" : "Écurie Démo",
+                    id: profile.id,
+                    name: profile.full_name || email,
+                    email: profile.email,
+                    type: profile.role as 'cavalier' | 'pro',
+                    points: profile.points || 0,
+                    unlockedArticles: []
+                };
+            } catch (err) {
+                console.warn("Erreur Supabase (Mode hors ligne probable):", err);
+                return {
+                    id: 'offline_user',
+                    name: "Utilisateur Hors-Ligne",
                     email: email,
                     type: type,
-                    points: 100,
+                    points: 0,
                     unlockedArticles: []
                 };
             }
-
-            return {
-                id: profile.id,
-                name: profile.full_name || email,
-                email: profile.email,
-                type: profile.role as 'cavalier' | 'pro',
-                points: profile.points || 0,
-                unlockedArticles: []
-            };
         },
         logout: async (): Promise<void> => {
             await supabase.auth.signOut();
         },
         getSession: async (): Promise<User | null> => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return null;
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return null;
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-            
-            if (!profile) return null;
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (!profile) return null;
 
-            return {
-                id: profile.id,
-                name: profile.full_name || session.user.email || '',
-                email: profile.email || session.user.email || '',
-                type: profile.role as 'cavalier' | 'pro',
-                points: profile.points || 0,
-                unlockedArticles: []
-            };
+                return {
+                    id: profile.id,
+                    name: profile.full_name || session.user.email || '',
+                    email: profile.email || session.user.email || '',
+                    type: profile.role as 'cavalier' | 'pro',
+                    points: profile.points || 0,
+                    unlockedArticles: []
+                };
+            } catch (error) {
+                return null;
+            }
         }
     },
     user: {
@@ -120,29 +132,34 @@ export const api = {
     },
     jobs: {
         getAll: async (): Promise<JobOffer[]> => {
-            const { data, error } = await supabase
-                .from('jobs')
-                .select('*')
-                .order('created_at', { ascending: false });
+            try {
+                const { data, error } = await supabase
+                    .from('jobs')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-            if (error || !data) return [];
-            
-            return data.map((job: any) => ({
-                id: job.id,
-                title: job.title,
-                company: job.company,
-                location: job.location || "France",
-                type: job.type || "CDI",
-                salary: job.salary || "Non spécifié",
-                date: new Date(job.created_at).toLocaleDateString(),
-                description: job.description || "",
-                missions: ["Voir description détaillée"],
-                profile: ["Voir description détaillée"],
-                benefits: [],
-                perks: [],
-                isPremium: false,
-                image: `https://picsum.photos/100/100?random=${job.id}`
-            }));
+                if (error || !data) return [];
+                
+                return data.map((job: any) => ({
+                    id: job.id,
+                    title: job.title,
+                    company: job.company,
+                    location: job.location || "France",
+                    type: job.type || "CDI",
+                    salary: job.salary || "Non spécifié",
+                    date: new Date(job.created_at).toLocaleDateString(),
+                    description: job.description || "",
+                    missions: ["Voir description détaillée"],
+                    profile: ["Voir description détaillée"],
+                    benefits: [],
+                    perks: [],
+                    isPremium: false,
+                    image: `https://picsum.photos/100/100?random=${job.id}`
+                }));
+            } catch (error) {
+                console.warn("Erreur chargement jobs:", error);
+                return [];
+            }
         },
         create: async (jobData: Omit<JobOffer, 'id' | 'date' | 'isPremium' | 'image' | 'perks'>): Promise<JobOffer> => {
             const { data: { user } } = await supabase.auth.getUser();
