@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Configuration Supabase
 // Les clés sont chargées depuis le fichier .env (sécurisé)
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
