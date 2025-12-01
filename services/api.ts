@@ -2,10 +2,31 @@ import { GoogleGenAI } from "@google/genai";
 import { User, JobOffer, ChatMessage } from '../types';
 import { supabase } from '../lib/supabase';
 
-// --- AI CONFIGURATION ---
-// Initialisation sécurisée avec la clé injectée par Vite
-const apiKey = process.env.API_KEY || "";
-const ai = apiKey ? new GoogleGenAI({ apiKey: apiKey }) : null;
+// --- AI HELPER ---
+// Fonction robuste pour récupérer la clé API où qu'elle soit
+const getApiKey = () => {
+    // 1. Essayer l'injection Vite (défini dans vite.config.ts)
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        return process.env.API_KEY;
+    }
+    // 2. Essayer les variables Vite standards (import.meta.env)
+    // @ts-ignore
+    if (import.meta.env && import.meta.env.API_KEY) return import.meta.env.API_KEY;
+    // @ts-ignore
+    if (import.meta.env && import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
+    
+    return "";
+};
+
+// Initialisation "Lazy" : on ne crée l'instance que quand on en a besoin
+const getAI = () => {
+    const key = getApiKey();
+    if (!key) {
+        console.warn("⚠️ Clé API Gemini manquante. Vérifiez vos variables d'environnement (API_KEY).");
+        return null;
+    }
+    return new GoogleGenAI({ apiKey: key });
+};
 
 // --- API SERVICE ---
 
@@ -137,7 +158,11 @@ export const api = {
     },
     chat: {
         sendMessage: async (history: ChatMessage[], newMessage: string): Promise<string> => {
-            if (!ai) return "Le service d'IA n'est pas configuré (Clé API manquante).";
+            const ai = getAI();
+            
+            if (!ai) {
+                return "Le service EquiBot est temporairement indisponible (Clé API manquante ou erreur configuration).";
+            }
 
             try {
                 // Préparation de l'historique pour Gemini (on exclut le message de bienvenue s'il est artificiel)

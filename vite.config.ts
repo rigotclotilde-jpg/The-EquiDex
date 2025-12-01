@@ -6,10 +6,13 @@ export default defineConfig(({ mode }) => {
   // Charge les variables .env du dossier courant
   const env = loadEnv(mode, '.', '');
   
-  // Priorité : Variable système (Vercel) > Fichier .env > Chaîne vide
-  const apiKey = process.env.API_KEY || env.API_KEY || '';
+  // Priorité : Variable système (Vercel) > Fichier .env > Fallback
+  // On accepte API_KEY ou VITE_API_KEY
+  const apiKey = process.env.API_KEY || env.API_KEY || process.env.VITE_API_KEY || env.VITE_API_KEY || '';
   const supabaseUrl = process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL || '';
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || '';
+
+  console.log("Build config - API Key status:", apiKey ? "Present (Hidden)" : "Missing");
 
   return {
     plugins: [react()],
