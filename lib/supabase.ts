@@ -1,8 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Configuration Supabase avec vos clés spécifiques
-// Si les variables d'environnement ne sont pas trouvées (ex: en local sans .env), on utilise ces valeurs par défaut.
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://rphxncuuxcimmioacxpl.supabase.co';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwaHhuY3V1eGNpbW1pb2FjeHBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0NTE0NTEsImV4cCI6MjA4MDAyNzQ1MX0.vrGFy9iqKB2cU01T4ZlG7t6usD2CiGLyHiQBJHI_3d0';
+// Les clés sont chargées depuis le fichier .env (sécurisé)
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Vérification de la configuration
+const isConfigured = supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http');
+
+if (!isConfigured) {
+    console.warn(
+        "⚠️ Supabase n'est pas configuré (clés manquantes ou incorrectes dans .env). " +
+        "L'application bascule en mode DÉMO avec des données simulées."
+    );
+}
+
+// Valeurs par défaut pour éviter le crash de createClient
+// L'API (services/api.ts) gérera les erreurs de requête pour basculer sur les données mock
+const url = isConfigured ? supabaseUrl : 'https://placeholder.supabase.co';
+const key = isConfigured ? supabaseAnonKey : 'placeholder-key';
+
+export const supabase = createClient(url, key);
