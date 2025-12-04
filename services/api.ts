@@ -5,11 +5,7 @@ import { supabase } from '../lib/supabase';
 // --- AI HELPER ---
 const getApiKey = () => {
     // @ts-ignore
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        // @ts-ignore
-        return process.env.API_KEY;
-    }
-    return "";
+    return import.meta.env.VITE_API_KEY || '';
 };
 
 // Initialisation "Lazy" : on ne crée l'instance que quand on en a besoin
@@ -83,7 +79,7 @@ export const api = {
                     .select('*')
                     .eq('id', session.user.id)
                     .single();
-                
+
                 if (!profile) return null;
 
                 return {
@@ -105,7 +101,7 @@ export const api = {
             if (!user) throw new Error("Non connecté");
 
             const { data: profile } = await supabase.from('profiles').select('points').eq('id', user.id).single();
-            
+
             if (!profile || profile.points < pointsToDeduct) {
                 throw new Error("Solde insuffisant");
             }
@@ -139,7 +135,7 @@ export const api = {
                     .order('created_at', { ascending: false });
 
                 if (error || !data) return [];
-                
+
                 return data.map((job: any) => ({
                     id: job.id,
                     title: job.title,
@@ -176,7 +172,7 @@ export const api = {
     chat: {
         sendMessage: async (history: ChatMessage[], newMessage: string): Promise<string> => {
             const ai = getAI();
-            
+
             if (!ai) {
                 return "Le service EquiBot est temporairement indisponible (Clé API manquante ou erreur configuration).";
             }

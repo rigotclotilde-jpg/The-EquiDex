@@ -5,9 +5,10 @@ import { createClient } from '@supabase/supabase-js';
 // Cela évite les erreurs de runtime si import.meta.env n'est pas défini.
 
 // @ts-ignore
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 // @ts-ignore
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+// @ts-ignore
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 const isConfigured = supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http');
 
