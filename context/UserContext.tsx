@@ -23,9 +23,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const loggedUser = await api.auth.login(email, type);
             setUser(loggedUser);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Login error:", error);
-            alert("Erreur de connexion");
+            alert(error?.message || "Erreur de connexion");
         } finally {
             setIsLoading(false);
         }

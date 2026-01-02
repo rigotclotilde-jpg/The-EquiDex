@@ -22,15 +22,36 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useJobContext } from '../context/JobContext';
+import { useUserContext } from '../context/UserContext';
+import { api } from '../services/api';
 
 type TabId = 'kpis' | 'clients' | 'profil' | 'recrutement';
 
 export const ProDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabId>('kpis');
     const { addJob } = useJobContext();
+    const { user } = useUserContext();
+
+    const [stable, setStable] = useState<any | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [jobError, setJobError] = useState<string | null>(null);
     const [jobSuccess, setJobSuccess] = useState<string | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        const loadStable = async () => {
+            if (!user || user.type !== 'pro') return setStable(null);
+            try {
+                const data = await api.stables.getByOwner(user.id);
+                if (mounted) setStable(data);
+            } catch (err) {
+                console.warn('Erreur chargement écurie:', err);
+                if (mounted) setStable(null);
+            }
+        };
+        loadStable();
+        return () => { mounted = false; };
+    }, [user]);
 
     // Auto-dismiss success message after 5 seconds
     useEffect(() => {
@@ -42,7 +63,7 @@ export const ProDashboard: React.FC = () => {
     // État pour le formulaire d'ajout d'offre
     const [jobForm, setJobForm] = useState({
         title: '',
-        company: 'Haras de la Forêt', // Pré-rempli avec le nom du compte pro
+        company: '', // Will be prefilled with stable name when available
         location: '',
         type: 'CDI',
         salary: '',
@@ -52,6 +73,13 @@ export const ProDashboard: React.FC = () => {
         profile: '', // Sera converti en array
         benefits: '' // Sera converti en array
     });
+
+    // When stable data is loaded, prefill company field
+    useEffect(() => {
+        if (stable && stable.name) {
+            setJobForm((f) => ({ ...f, company: stable.name }));
+        }
+    }, [stable]);
 
     const handleJobSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -119,7 +147,7 @@ export const ProDashboard: React.FC = () => {
                             <LayoutDashboard className="text-amber-600" size={32} />
                             Tableau de Bord
                         </h1>
-                        <p className="text-gray-500 mt-1">Haras de la Forêt • Compte Pro</p>
+                        <p className="text-gray-500 mt-1">{stable?.name ? `${stable.name} • Compte Pro` : 'Compte Pro'}</p>
                     </div>
                     <div className="flex gap-3">
                         <Button variant="outline" className="!text-slate-600 !border-slate-300 hover:!bg-slate-100">
@@ -300,29 +328,33 @@ export const ProDashboard: React.FC = () => {
                             </div>
 
                             <h4 className="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide border-b border-gray-100 pb-2">Aperçu des données actuelles</h4>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-75">
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nom Commercial</label>
-                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">Haras de la Forêt</div>
+
+                            {stable ? (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nom Commercial</label>
+                                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">{stable.name || 'Non renseigné'}</div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Prix Box Standard</label>
+                                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">{stable.price_box ? `${stable.price_box} €` : 'Non renseigné'}</div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Disciplines</label>
+                                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">{stable.disciplines ? (Array.isArray(stable.disciplines) ? stable.disciplines.join(', ') : stable.disciplines) : 'Non renseigné'}</div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Localisation</label>
+                                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">{stable.location || 'Non renseigné'}</div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Email Contact</label>
+                                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">{stable.contact_email || 'Non renseigné'}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Prix Box Standard</label>
-                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">750 €</div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Disciplines</label>
-                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">CSO, Dressage, CCE</div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Localisation</label>
-                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">78, Yvelines</div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Email Contact</label>
-                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-slate-800 font-medium">contact@haras-foret.fr</div>
-                                </div>
-                            </div>
+                            ) : (
+                                <div className="p-6 bg-slate-50 rounded-lg text-sm text-gray-500">Aucune information d'écurie enregistrée pour l'instant. Complétez votre fiche pour l'afficher ici.</div>
+                            )}
                         </div>
                     )}
 

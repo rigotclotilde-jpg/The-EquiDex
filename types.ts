@@ -18,6 +18,13 @@ export interface Stable {
     reviewsCount?: number;
     isPremium?: boolean;
     description?: string;
+    // Contact & web
+    contact_email?: string;
+    contact_phone?: string;
+    website?: string;
+    // Images & ownership
+    images?: string[];
+    ownerId?: string;
 }
 
 export interface BlogPost {

@@ -35,15 +35,8 @@ export const api = {
                 if (error) throw error;
 
                 if (!profile) {
-                    console.warn(`⚠️ Aucun profil trouvé pour ${email}. Mode Démo.`);
-                    return {
-                        id: 'demo_user',
-                        name: type === 'cavalier' ? "Utilisateur Démo" : "Écurie Démo",
-                        email: email,
-                        type: type,
-                        points: 100,
-                        unlockedArticles: []
-                    };
+                    console.warn(`⚠️ Aucun profil trouvé pour ${email}.`);
+                    throw new Error(`Profil introuvable pour ${email}`);
                 }
 
                 return {
@@ -55,15 +48,8 @@ export const api = {
                     unlockedArticles: []
                 };
             } catch (err) {
-                console.warn("Erreur Supabase (Mode hors ligne probable):", err);
-                return {
-                    id: 'offline_user',
-                    name: "Utilisateur Hors-Ligne",
-                    email: email,
-                    type: type,
-                    points: 0,
-                    unlockedArticles: []
-                };
+                console.warn("Erreur Supabase:", err);
+                throw err;
             }
         },
         logout: async (): Promise<void> => {
@@ -219,6 +205,43 @@ export const api = {
             } catch (error) {
                 console.warn('Erreur getByOwner:', error);
                 return null;
+            }
+        },
+        getById: async (stableId: string | number) => {
+            try {
+                const { data, error } = await supabase
+                    .from('stables')
+                    .select('*, profiles(id, role)')
+                    .eq('id', stableId)
+                    .maybeSingle();
+
+                if (error || !data) return null;
+
+                // If owner profile exists and is not a 'pro', hide the stable
+                if (data.profiles && data.profiles.role !== 'pro') return null;
+
+                return data;
+            } catch (error) {
+                console.warn('Erreur getById:', error);
+                return null;
+            }
+        },
+        // Upload an image file to Supabase Storage and return its public URL
+        uploadImage: async (stableId: string | number, file: File): Promise<string> => {
+            try {
+                // Requires a storage bucket named 'stables' to exist
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,8)}.${fileExt}`;
+                const path = `stables/${stableId}/${fileName}`;
+
+                const { data, error } = await supabase.storage.from('stables').upload(path, file, { cacheControl: '3600', upsert: false });
+                if (error) throw error;
+
+                const { data: urlData } = await supabase.storage.from('stables').getPublicUrl(path);
+                return urlData.publicUrl;
+            } catch (err: any) {
+                console.error('Erreur upload image Supabase:', err);
+                throw err;
             }
         },
         upsert: async (stableData: any) => {

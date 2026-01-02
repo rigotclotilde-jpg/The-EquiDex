@@ -7,37 +7,8 @@ import { Button } from '../components/Button';
 import { useUserContext } from '../context/UserContext';
 import { api } from '../services/api';
 
-// Initial mock data kept for fallback during development
-const DEFAULT_STABLES: Stable[] = [
-    {
-        id: 1,
-        name: "Haras de la Forêt",
-        location: "78500 Sartrouville, Yvelines",
-        distance: "8.5 km",
-        specialty: "Pension Travail / Box-Paddock",
-        type: "Écurie de Propriétaires",
-        rating: 4.8,
-        reviewsCount: 85,
-        price: 750,
-        facilities: ["Manège", "Solarium", "Sorties Forêt"],
-        imageUrl: "https://picsum.photos/400/300?random=15",
-        isPremium: true
-    },
-    {
-        id: 4,
-        name: "Pôle International de Deauville",
-        location: "14800 Deauville",
-        distance: "190 km",
-        specialty: "Compétition Haut Niveau",
-        type: "Pôle Compétition",
-        rating: 4.9,
-        reviewsCount: 320,
-        price: 950,
-        facilities: ["Manège Olympique", "Piste Galop", "Restaurant"],
-        imageUrl: "https://picsum.photos/400/300?random=13",
-        isPremium: true
-    }
-];
+// Initial mock data kept for fallback during development (removed vitrine entries)
+const DEFAULT_STABLES: Stable[] = [];
 
 export const Directory: React.FC = () => {
     const [priceRange, setPriceRange] = useState(1000);
