@@ -4,9 +4,11 @@ import { Briefcase, MapPin, Clock, Euro, Home, Search, Filter, CheckCircle, Star
 import { Button } from '../components/Button';
 import { Link } from 'react-router-dom';
 import { useJobContext } from '../context/JobContext';
+import { useUserContext } from '../context/UserContext';
 
 export const Jobs: React.FC = () => {
     const { jobs, isLoading } = useJobContext();
+    const { user } = useUserContext();
     const [filters, setFilters] = useState({
         keyword: '',
         location: '',
@@ -53,11 +55,13 @@ export const Jobs: React.FC = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-6 items-center">
-                         <Link to="/pro-dashboard">
-                            <Button className="bg-amber-600 border-amber-600 hover:bg-amber-700 text-white px-8 py-4 shadow-xl hover:shadow-amber-900/40 hover:-translate-y-1 transition-all text-sm tracking-widest">
-                                Recruteurs : Déposer une offre
-                            </Button>
-                         </Link>
+                         {user?.type === 'pro' && (
+                            <Link to="/pro-dashboard">
+                                <Button className="bg-amber-600 border-amber-600 hover:bg-amber-700 text-white px-8 py-4 shadow-xl hover:shadow-amber-900/40 hover:-translate-y-1 transition-all text-sm tracking-widest">
+                                    Recruteurs : Déposer une offre
+                                </Button>
+                            </Link>
+                         )}
                          <button 
                             onClick={() => document.getElementById('jobs-list')?.scrollIntoView({ behavior: 'smooth' })}
                             className="group flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-white/80 hover:text-white transition-colors border-b border-transparent hover:border-white pb-1"

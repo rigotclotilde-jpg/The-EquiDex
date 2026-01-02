@@ -49,7 +49,7 @@ export const Directory: React.FC = () => {
         infra: [] as string[]
     });
 
-    const [stables, setStables] = useState<Stable[]>(DEFAULT_STABLES);
+    const [stables, setStables] = useState<Stable[]>([]);
     const { user } = useUserContext();
 
     useEffect(() => {
@@ -70,7 +70,8 @@ export const Directory: React.FC = () => {
                     facilities: s.facilities || [],
                     imageUrl: s.image_url || `https://picsum.photos/400/300?random=${s.id}`,
                     isPremium: s.is_premium || false,
-                    description: s.description || ''
+                    description: s.description || '',
+                    ownerType: s.profiles?.role || 'unknown'
                 }));
                 setStables(mapped);
             }
@@ -160,11 +161,12 @@ export const Directory: React.FC = () => {
 
                             {/* Budget */}
                             <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
-                                    <Euro size={14} className="text-amber-600" /> Budget Max
+                                <label htmlFor="budget-range" className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                    <Euro size={14} className="text-amber-600" aria-hidden="true" /> Budget Max
                                 </label>
                                 <div className="px-2">
                                     <input 
+                                        id="budget-range"
                                         type="range" 
                                         min="200" 
                                         max="1500" 
@@ -220,8 +222,8 @@ export const Directory: React.FC = () => {
                             </div>
                             <div className="h-4 w-px bg-gray-300"></div>
                             <div className="flex gap-1">
-                                <button className="p-1.5 text-black bg-gray-100 rounded hover:bg-gray-200"><List size={18} /></button>
-                                <button className="p-1.5 text-gray-400 hover:text-black transition-colors"><MapIcon size={18} /></button>
+                                <button type="button" aria-label="Affichage liste" className="p-1.5 text-black bg-gray-100 rounded hover:bg-gray-200"><List size={18} aria-hidden="true" /></button>
+                                <button type="button" aria-label="Afficher sur la carte" className="p-1.5 text-gray-400 hover:text-black transition-colors"><MapIcon size={18} aria-hidden="true" /></button>
                             </div>
                         </div>
                     </div>
@@ -311,6 +313,17 @@ export const Directory: React.FC = () => {
                             </div>
                         ))}
                     </div>
+
+                    {filteredStables.length === 0 && (
+                        <div className="py-12 text-center text-gray-500">
+                            <p>Aucune écurie trouvée pour le moment.</p>
+                            {user?.type === 'pro' && (
+                                <div className="mt-4">
+                                    <Link to="/edit-profile" className="inline-block bg-green-600 text-white px-4 py-2 rounded">Créer ma fiche écurie</Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Pagination Mock */}
                     <div className="mt-12 flex justify-center gap-2 font-sans">

@@ -159,9 +159,26 @@ export const api = {
         },
         create: async (jobData: Omit<JobOffer, 'id' | 'date' | 'isPremium' | 'image' | 'perks'>): Promise<JobOffer> => {
             const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Non connecté');
+
+            // Verify user's role is 'pro'
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError || !profile) {
+                throw new Error('Profil introuvable. Veuillez vérifier votre compte.');
+            }
+
+            if (profile.role !== 'pro') {
+                throw new Error('Accès refusé — seuls les comptes professionnels peuvent créer des offres d\'emploi.');
+            }
+
             const { data, error } = await supabase
                 .from('jobs')
-                .insert([{ ...jobData, user_id: user?.id }])
+                .insert([{ ...jobData, user_id: user.id }])
                 .select()
                 .single();
 
@@ -173,13 +190,17 @@ export const api = {
     stables: {
         getAll: async (): Promise<any[]> => {
             try {
+                // Select associated profile (owner) so we can filter by owner role
                 const { data, error } = await supabase
                     .from('stables')
-                    .select('*')
+                    .select('*, profiles(id, role)')
                     .order('created_at', { ascending: false });
 
                 if (error || !data) return [];
-                return data;
+
+                // Only return stables whose owner profile has role === 'pro'
+                const proStables = data.filter((s: any) => s.profiles && s.profiles.role === 'pro');
+                return proStables;
             } catch (error) {
                 console.warn('Erreur chargement stables:', error);
                 return [];
@@ -203,6 +224,21 @@ export const api = {
         upsert: async (stableData: any) => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Non connecté');
+
+            // Ensure the current user has a 'pro' role before allowing upsert
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError || !profile) {
+                throw new Error('Profil introuvable. Veuillez vérifier votre compte.');
+            }
+
+            if (profile.role !== 'pro') {
+                throw new Error('Accès refusé — seuls les comptes professionnels peuvent créer ou modifier une fiche écurie.');
+            }
 
             const payload = { ...stableData, user_id: user.id };
             const { data, error } = await supabase

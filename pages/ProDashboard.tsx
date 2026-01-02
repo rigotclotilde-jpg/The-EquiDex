@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
     LayoutDashboard, 
@@ -29,6 +29,15 @@ export const ProDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabId>('kpis');
     const { addJob } = useJobContext();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [jobError, setJobError] = useState<string | null>(null);
+    const [jobSuccess, setJobSuccess] = useState<string | null>(null);
+
+    // Auto-dismiss success message after 5 seconds
+    useEffect(() => {
+        if (!jobSuccess) return;
+        const t = window.setTimeout(() => setJobSuccess(null), 5000);
+        return () => clearTimeout(t);
+    }, [jobSuccess]);
 
     // État pour le formulaire d'ajout d'offre
     const [jobForm, setJobForm] = useState({
@@ -47,7 +56,9 @@ export const ProDashboard: React.FC = () => {
     const handleJobSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        
+        setJobError(null);
+        setJobSuccess(null);
+
         try {
             // Conversion des champs texte en tableaux (séparés par des retours à la ligne)
             const missionsArray = jobForm.missions.split('\n').filter(line => line.trim() !== '');
@@ -68,7 +79,7 @@ export const ProDashboard: React.FC = () => {
                 start: "Dès que possible"
             });
 
-            alert("Votre offre d'emploi a été publiée avec succès !");
+            setJobSuccess("Votre offre d'emploi a été publiée avec succès !");
             // Reset form
             setJobForm({
                 title: '',
@@ -82,9 +93,9 @@ export const ProDashboard: React.FC = () => {
                 profile: '',
                 benefits: ''
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Erreur lors de la publication.");
+            setJobError(error?.message || "Erreur lors de la publication.");
         } finally {
             setIsSubmitting(false);
         }
@@ -323,6 +334,16 @@ export const ProDashboard: React.FC = () => {
                             </h3>
                             
                             <form onSubmit={handleJobSubmit} className="space-y-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                {jobError && (
+                                    <div className="mb-4 p-4 rounded border border-red-100 bg-red-50 text-red-700">
+                                        {jobError}
+                                    </div>
+                                )}
+                                {jobSuccess && (
+                                    <div className="mb-4 p-4 rounded border border-green-100 bg-green-50 text-green-700">
+                                        {jobSuccess}
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-sm font-semibold text-slate-700">Intitulé du Poste *</label>
@@ -336,8 +357,9 @@ export const ProDashboard: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700">Type de Contrat *</label>
+                                        <label htmlFor="job-type" className="text-sm font-semibold text-slate-700">Type de Contrat *</label>
                                         <select 
+                                            id="job-type"
                                             value={jobForm.type}
                                             onChange={(e) => setJobForm({...jobForm, type: e.target.value})}
                                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"

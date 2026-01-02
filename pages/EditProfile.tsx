@@ -12,6 +12,15 @@ export const EditProfile: React.FC = () => {
     const formRef = useRef<HTMLFormElement | null>(null);
     const { user } = useUserContext();
     const [initialValues, setInitialValues] = useState<any>(null);
+    const [formError, setFormError] = useState<string | null>(null);
+    const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+    // Auto-dismiss success message after 5 seconds
+    useEffect(() => {
+        if (!formSuccess) return;
+        const t = window.setTimeout(() => setFormSuccess(null), 5000);
+        return () => clearTimeout(t);
+    }, [formSuccess]);
 
     useEffect(() => {
         (async () => {
@@ -51,6 +60,8 @@ export const EditProfile: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFormError(null);
+        setFormSuccess(null);
         if (!formRef.current) return;
         const form = formRef.current;
         const fd = new FormData(form as HTMLFormElement);
@@ -70,10 +81,11 @@ export const EditProfile: React.FC = () => {
 
         try {
             await api.stables.upsert(payload);
-            alert('Profil enregistré avec succès !');
-        } catch (err) {
+            setFormSuccess('Profil enregistré avec succès !');
+        } catch (err: any) {
             console.error(err);
-            alert('Erreur lors de l’enregistrement.');
+            const message = err?.message || 'Erreur lors de l’enregistrement.';
+            setFormError(message);
         }
     };
 
@@ -117,6 +129,16 @@ export const EditProfile: React.FC = () => {
 
                 {/* Form Content */}
                 <form ref={(el) => formRef.current = el} className="bg-white rounded-2xl shadow-lg p-8 animate-fade-in" onSubmit={handleSubmit}>
+                    {formError && (
+                        <div className="mb-4 p-4 rounded border border-red-100 bg-red-50 text-red-700">
+                            {formError}
+                        </div>
+                    )}
+                    {formSuccess && (
+                        <div className="mb-4 p-4 rounded border border-green-100 bg-green-50 text-green-700">
+                            {formSuccess}
+                        </div>
+                    )} 
                     
                     {/* STEP 1: INFOS */}
                     {activeStep === 'info' && (

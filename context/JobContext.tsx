@@ -6,7 +6,7 @@ import { api } from '../services/api';
 interface JobContextType {
     jobs: JobOffer[];
     isLoading: boolean;
-    addJob: (job: Omit<JobOffer, 'id' | 'date' | 'isPremium' | 'image' | 'perks'>) => Promise<void>;
+    addJob: (job: Omit<JobOffer, 'id' | 'date' | 'isPremium' | 'image' | 'perks'>) => Promise<JobOffer>;
 }
 
 const JobContext = createContext<JobContextType | undefined>(undefined);
@@ -32,10 +32,16 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, []);
 
     const addJob = async (newJobData: Omit<JobOffer, 'id' | 'date' | 'isPremium' | 'image' | 'perks'>) => {
-        // On retourne la promesse pour permettre au composant d'afficher un état de chargement
-        const createdJob = await api.jobs.create(newJobData);
-        setJobs(prevJobs => [createdJob, ...prevJobs]);
-    };
+        try {
+            const createdJob = await api.jobs.create(newJobData);
+            setJobs(prevJobs => [createdJob, ...prevJobs]);
+            return createdJob;
+        } catch (err) {
+            console.error('Erreur création job:', err);
+            // Rethrow so the UI can handle and display a friendly message
+            throw err;
+        }
+    }; 
 
     return (
         <JobContext.Provider value={{ jobs, isLoading, addJob }}>

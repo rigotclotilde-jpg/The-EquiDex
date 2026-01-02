@@ -10,23 +10,51 @@ import { Button } from '../components/Button';
 import { BLOG_POSTS_DATA } from '../data/mockData';
 import { useUserContext } from '../context/UserContext';
 
+// Small sanitizer to remove scripts and inline event handlers from HTML strings
+const sanitizeHtml = (html: string) => {
+    if (!html) return '';
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        // remove script and style tags
+        doc.querySelectorAll('script, style').forEach(el => el.remove());
+        // remove inline event handlers and javascript: hrefs
+        doc.querySelectorAll('*').forEach((el) => {
+            Array.from(el.attributes).forEach((attr) => {
+                if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+                if (attr.name === 'href' && String(attr.value).trim().toLowerCase().startsWith('javascript:')) el.removeAttribute('href');
+            });
+        });
+        return doc.body.innerHTML;
+    } catch (e) {
+        console.warn('Sanitizer error:', e);
+        return '';
+    }
+};
+
 // --- Sub-Components ---
 
 const AccordionItem: React.FC<{ title: string; image?: string; content: { label: string; text: string }[] }> = ({ title, image, content }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const slug = title.replace(/\s+/g, '-').toLowerCase();
+    const buttonId = `accordion-${slug}-button`;
+    const contentId = `accordion-${slug}-content`;
 
     return (
         <div className={`border rounded-lg mb-6 overflow-hidden transition-all duration-300 shadow-sm ${isOpen ? 'border-amber-500 shadow-md' : 'border-gray-200'}`}>
             <button 
+                type="button"
+                id={buttonId}
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex justify-between items-center p-5 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                 aria-expanded={isOpen}
+                aria-controls={contentId}
             >
                 <strong className="font-serif text-lg text-slate-800">{title}</strong>
-                <ChevronDown size={20} className={`text-amber-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={20} className={`text-amber-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
             </button>
             
-            <div className={`bg-white transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div id={contentId} role="region" aria-labelledby={buttonId} aria-hidden={!isOpen} className={`bg-white transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="p-5">
                     {image && (
                         <div className="mb-5 rounded-lg overflow-hidden shadow-sm">
@@ -55,7 +83,7 @@ const StandardArticleContent: React.FC<{ content: { title: string; text: string 
                 {/* Updated to support HTML content for rich text formatting */}
                 <div 
                     className="text-gray-700 leading-relaxed [&>h4]:font-bold [&>h4]:text-lg [&>h4]:mt-6 [&>h4]:mb-3 [&>h4]:text-slate-900 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ul]:space-y-2 [&>p]:mb-4"
-                    dangerouslySetInnerHTML={{ __html: section.text }} 
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(section.text) }} 
                 />
             </div>
         ))}
@@ -241,14 +269,7 @@ export const BlogPost: React.FC = () => {
                                         ))}
                                     </div>
 
-                                    {/* Ad Banner (Mid-Article) */}
-                                    <div className="mt-12 bg-[#FFFBEA] border border-amber-200 rounded-lg p-6 text-center shadow-sm">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2 tracking-widest">Publicité</p>
-                                        <a href="https://www.hermes.com/fr/fr/sellerie/" target="_blank" rel="noopener noreferrer" className="text-lg md:text-xl font-serif font-bold text-slate-800 hover:text-amber-700 transition-colors flex items-center justify-center gap-2">
-                                            Découvrez la collection de sellerie de luxe <span className="text-amber-600">Hermès</span>
-                                            <ExternalLink size={18} />
-                                        </a>
-                                    </div>
+
                                 </div>
                             )}
 
@@ -256,10 +277,15 @@ export const BlogPost: React.FC = () => {
                             {article.type === 'tabs' && (
                                 <>
                                     {/* Tab Navigation */}
-                                    <div className="flex flex-wrap border-b border-gray-200 mb-8">
+                                    <div role="tablist" aria-label="Sections de l'article" className="flex flex-wrap border-b border-gray-200 mb-8">
                                         {['majors', 'cso', 'cce', 'autres'].map((tab) => (
                                             <button 
                                                 key={tab}
+                                                type="button"
+                                                role="tab"
+                                                id={`tab-${tab}`}
+                                                aria-selected={activeTab === tab}
+                                                aria-controls={`tabpanel-${tab}`}
                                                 onClick={() => setActiveTab(tab as any)}
                                                 className={`px-6 py-4 font-bold text-sm uppercase tracking-wider transition-all relative ${
                                                     activeTab === tab 
@@ -275,7 +301,7 @@ export const BlogPost: React.FC = () => {
                                         ))}
                                     </div>
 
-                                    <div className="animate-fade-in">
+                                    <div className="animate-fade-in" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`} aria-hidden={false}>
                                         {/* Dynamic Tab Image */}
                                         <div className="relative h-64 rounded-xl overflow-hidden mb-8 shadow-lg">
                                             <img 
@@ -298,7 +324,7 @@ export const BlogPost: React.FC = () => {
                                         {/* Expert Insight */}
                                         <div className="bg-slate-50 border-l-4 border-slate-800 p-6 mb-8 rounded-r-lg">
                                             <h4 className="font-bold text-slate-900 text-sm uppercase tracking-wide mb-2 flex items-center gap-2">
-                                                <Quote size={16} className="text-amber-600" /> L'Œil de l'Expert
+                                                <Quote size={16} className="text-amber-600" aria-hidden="true" /> L'Œil de l'Expert
                                             </h4>
                                             <p className="text-slate-700 italic font-medium">
                                                 "{article.content[activeTab].expert}"
@@ -345,7 +371,7 @@ export const BlogPost: React.FC = () => {
                                                 </tbody>
                                             </table>
                                         </div>
-                                    </div>
+                                    </div> 
                                 </>
                             )}
                         </div>
@@ -361,10 +387,10 @@ export const BlogPost: React.FC = () => {
                             Partager
                         </h3>
                         <div className="flex gap-2">
-                            <button aria-label="Partager sur Facebook" className="w-10 h-10 bg-[#3b5998] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Facebook size={18} /></button>
-                            <button aria-label="Partager sur Twitter" className="w-10 h-10 bg-[#55acee] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Twitter size={18} /></button>
-                            <button aria-label="Partager sur LinkedIn" className="w-10 h-10 bg-[#007bb5] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Linkedin size={18} /></button>
-                            <button aria-label="Partager par mail" className="w-10 h-10 bg-gray-500 text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Mail size={18} /></button>
+                            <button type="button" aria-label="Partager sur Facebook" className="w-10 h-10 bg-[#3b5998] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Facebook size={18} aria-hidden="true" /></button>
+                            <button type="button" aria-label="Partager sur Twitter" className="w-10 h-10 bg-[#55acee] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Twitter size={18} aria-hidden="true" /></button>
+                            <button type="button" aria-label="Partager sur LinkedIn" className="w-10 h-10 bg-[#007bb5] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Linkedin size={18} aria-hidden="true" /></button>
+                            <button type="button" aria-label="Partager par mail" className="w-10 h-10 bg-gray-500 text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Mail size={18} aria-hidden="true" /></button>
                         </div>
                     </div>
 
