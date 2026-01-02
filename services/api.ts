@@ -249,14 +249,39 @@ export const api = {
             if (!user) throw new Error('Non connecté');
 
             // Ensure the current user has a 'pro' role before allowing upsert
-            const { data: profile, error: profileError } = await supabase
+            let { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('role')
                 .eq('id', user.id)
                 .single();
 
+            // If profile is missing, try to create it automatically using user metadata (useful if trigger hasn't run or email confirmation flow)
+            if ((!profile || profileError) && user?.user_metadata) {
+                const inferredRole = (user.user_metadata as any)?.role || 'cavalier';
+                try {
+                    const insertPayload: any = {
+                        id: user.id,
+                        email: user.email,
+                        full_name: (user.user_metadata as any)?.full_name || user.email,
+                        role: inferredRole,
+                        points: 0
+                    };
+                    const { error: insertError } = await supabase.from('profiles').insert([insertPayload]);
+                    if (insertError) {
+                        console.warn('Création automatique du profil a échoué:', insertError);
+                    } else {
+                        // re-fetch profile
+                        const res = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                        profile = res.data;
+                        profileError = res.error;
+                    }
+                } catch (err) {
+                    console.warn('Erreur création profil automatique:', err);
+                }
+            }
+
             if (profileError || !profile) {
-                throw new Error('Profil introuvable. Veuillez vérifier votre compte.');
+                throw new Error('Profil introuvable. Veuillez vérifier votre compte ou confirmer votre email.');
             }
 
             if (profile.role !== 'pro') {
