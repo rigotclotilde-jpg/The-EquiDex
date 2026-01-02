@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "audit:axe": "npx -y @axe-core/cli http://localhost:5176/ --save=reports/axe-home.json",
+    "audit:pa11y": "npx -y pa11y http://localhost:5176/ --reporter json > reports/pa11y-home.json",
+    "audit:lighthouse": "npx -y lighthouse http://localhost:5176/ --chrome-flags='--headless --no-sandbox --disable-gpu --allow-insecure-localhost' --output=json --output-path=reports/lighthouse-home.json || true",
+    "audit:all": "npm run build && nohup npm run preview -- --port 5176 & sleep 2 && mkdir -p reports && npm run audit:axe && npm run audit:pa11y && npm run audit:lighthouse"
   },
   "dependencies": {
     "@google/genai": "latest",

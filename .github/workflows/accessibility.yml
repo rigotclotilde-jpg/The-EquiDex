@@ -1,0 +1,59 @@
+name: Accessibility Tests
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  a11y:
+    name: Run accessibility audits (axe / pa11y / lighthouse)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+
+      - name: Prepare reports dir
+        run: mkdir -p reports
+
+      - name: Start preview server
+        run: |
+          nohup npm run preview -- --port 5177 &>/dev/null &
+          # Give the server a moment to boot
+          sleep 2
+
+      - name: Wait for preview server
+        run: npx wait-on http://localhost:5177 --timeout 60000
+
+      - name: Axe scan (axe-core)
+        run: npx -y @axe-core/cli http://localhost:5177 --save=reports/axe-home.json
+
+      - name: Pa11y scan
+        run: npx -y pa11y http://localhost:5177 --reporter json > reports/pa11y-home.json
+
+      - name: Lighthouse scan
+        # Lighthouse can sometimes exit non-zero depending on checks; do not let it fail the whole job
+        run: npx -y lighthouse http://localhost:5177 --chrome-flags="--headless --no-sandbox --disable-gpu --allow-insecure-localhost" --output=json --output-path=reports/lighthouse-home.json || true
+
+      - name: Upload accessibility reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-reports
+          path: reports
+
+      - name: Cleanup preview server (best-effort)
+        if: always()
+        run: |
+          pkill -f "vite" || true
