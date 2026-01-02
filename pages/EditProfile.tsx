@@ -1,12 +1,29 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Home, Trophy, Euro, Image as ImageIcon, Save, Upload, X, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/Button';
+import { useUserContext } from '../context/UserContext';
+import { api } from '../services/api';
 
 type StepId = 'info' | 'infra' | 'activites' | 'tarifs' | 'media';
 
 export const EditProfile: React.FC = () => {
     const [activeStep, setActiveStep] = useState<StepId>('info');
+    const formRef = useRef<HTMLFormElement | null>(null);
+    const { user } = useUserContext();
+    const [initialValues, setInitialValues] = useState<any>(null);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                if (!user) return;
+                const myStable = await api.stables.getByOwner(user.id);
+                if (myStable) setInitialValues(myStable);
+            } catch (err) {
+                // ignore
+            }
+        })();
+    }, [user]);
 
     const steps = [
         { id: 'info', label: 'Infos Générales', icon: <User size={18} /> },
@@ -32,10 +49,32 @@ export const EditProfile: React.FC = () => {
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        alert("Profil enregistré avec succès !");
-        // Logic to save data would go here
+        if (!formRef.current) return;
+        const form = formRef.current;
+        const fd = new FormData(form as HTMLFormElement);
+
+        const payload: any = {
+            name: fd.get('nom_commercial') || '',
+            denomination: fd.get('denomination_sociale') || '',
+            manager: fd.get('dirigeant') || '',
+            address: fd.get('adresse') || '',
+            phone: fd.get('telephone') || '',
+            email: fd.get('email') || '',
+            website: fd.get('website') || '',
+            price_box: fd.get('prix_box') || null,
+            price_pre: fd.get('prix_pre') || null,
+            description: fd.get('description') || ''
+        };
+
+        try {
+            await api.stables.upsert(payload);
+            alert('Profil enregistré avec succès !');
+        } catch (err) {
+            console.error(err);
+            alert('Erreur lors de l’enregistrement.');
+        }
     };
 
     return (
@@ -77,7 +116,7 @@ export const EditProfile: React.FC = () => {
                 </div>
 
                 {/* Form Content */}
-                <form className="bg-white rounded-2xl shadow-lg p-8 animate-fade-in" onSubmit={handleSubmit}>
+                <form ref={(el) => formRef.current = el} className="bg-white rounded-2xl shadow-lg p-8 animate-fade-in" onSubmit={handleSubmit}>
                     
                     {/* STEP 1: INFOS */}
                     {activeStep === 'info' && (
@@ -85,26 +124,31 @@ export const EditProfile: React.FC = () => {
                             <SectionHeader title="Dénomination & Contacts" subtitle="Responsabilité Légale" />
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <Input label="Nom commercial *" id="nom_commercial" required />
-                                <Input label="Dénomination Sociale" id="denomination_sociale" />
-                                <Input label="Nom du Dirigeant *" id="dirigeant" required />
+                                <Input label="Nom commercial *" id="nom_commercial" name="nom_commercial" required defaultValue={initialValues?.name || ''} />
+                                <Input label="Dénomination Sociale" id="denomination_sociale" name="denomination_sociale" defaultValue={initialValues?.denomination || ''} />
+                                <Input label="Nom du Dirigeant *" id="dirigeant" name="dirigeant" required defaultValue={initialValues?.manager || ''} />
                             </div>
 
                             <div className="border-t border-gray-100 pt-6">
                                 <h4 className="font-bold text-equidex-dark mb-4">Coordonnées</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <Input label="Adresse Complète *" id="adresse" required />
-                                    <Input label="Téléphone *" id="telephone" type="tel" required />
-                                    <Input label="Email *" id="email" type="email" required />
+                                    <Input label="Adresse Complète *" id="adresse" name="adresse" required defaultValue={initialValues?.address || ''} />
+                                    <Input label="Téléphone *" id="telephone" name="telephone" type="tel" required defaultValue={initialValues?.phone || ''} />
+                                    <Input label="Email *" id="email" name="email" type="email" required defaultValue={initialValues?.email || ''} />
                                 </div>
                             </div>
 
                             <div className="border-t border-gray-100 pt-6">
                                 <h4 className="font-bold text-equidex-dark mb-4">Sur le Web</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <Input label="Site Web" id="website" type="url" />
-                                    <Input label="Facebook URL" id="facebook" type="url" />
-                                    <Input label="Instagram URL" id="instagram" type="url" />
+                                    <Input label="Site Web" id="website" name="website" type="url" defaultValue={initialValues?.website || ''} />
+                                    <Input label="Facebook URL" id="facebook" name="facebook" type="url" defaultValue={initialValues?.facebook || ''} />
+                                    <Input label="Instagram URL" id="instagram" name="instagram" type="url" defaultValue={initialValues?.instagram || ''} />
+                                </div>
+
+                                <div className="mt-6">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description publique</label>
+                                    <textarea name="description" aria-label="Description publique" defaultValue={initialValues?.description || ''} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 resize-none" rows={4} />
                                 </div>
                             </div>
                         </div>
@@ -213,9 +257,9 @@ export const EditProfile: React.FC = () => {
                             <SectionHeader title="Tarifs & Conditions" />
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <Input label="Pension Box (Mensuel) €" type="number" id="prix_box" defaultValue="750" />
-                                <Input label="Pension Pré (Mensuel) €" type="number" id="prix_pre" defaultValue="450" />
-                                <Input label="Supplément Paddock €" type="number" id="supp_paddock" defaultValue="50" />
+                                <Input label="Pension Box (Mensuel) €" type="number" id="prix_box" name="prix_box" defaultValue={initialValues?.price_box || 750} />
+                                <Input label="Pension Pré (Mensuel) €" type="number" id="prix_pre" name="prix_pre" defaultValue={initialValues?.price_pre || 450} />
+                                <Input label="Supplément Paddock €" type="number" id="supp_paddock" name="supp_paddock" defaultValue={initialValues?.supp_paddock || 50} />
                             </div>
 
                             <div className="border-t border-gray-100 pt-6">
@@ -246,7 +290,7 @@ export const EditProfile: React.FC = () => {
                                 {[1, 2].map((i) => (
                                     <div key={i} className="relative aspect-square rounded-lg overflow-hidden shadow-sm group">
                                         <img src={`https://picsum.photos/400/400?random=${i+10}`} alt="Aperçu" className="w-full h-full object-cover" />
-                                        <button type="button" className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button type="button" aria-label="Supprimer la photo" className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                             <X size={14} />
                                         </button>
                                     </div>

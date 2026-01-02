@@ -361,10 +361,10 @@ export const BlogPost: React.FC = () => {
                             Partager
                         </h3>
                         <div className="flex gap-2">
-                            <button className="w-10 h-10 bg-[#3b5998] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Facebook size={18} /></button>
-                            <button className="w-10 h-10 bg-[#55acee] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Twitter size={18} /></button>
-                            <button className="w-10 h-10 bg-[#007bb5] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Linkedin size={18} /></button>
-                            <button className="w-10 h-10 bg-gray-500 text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Mail size={18} /></button>
+                            <button aria-label="Partager sur Facebook" className="w-10 h-10 bg-[#3b5998] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Facebook size={18} /></button>
+                            <button aria-label="Partager sur Twitter" className="w-10 h-10 bg-[#55acee] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Twitter size={18} /></button>
+                            <button aria-label="Partager sur LinkedIn" className="w-10 h-10 bg-[#007bb5] text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Linkedin size={18} /></button>
+                            <button aria-label="Partager par mail" className="w-10 h-10 bg-gray-500 text-white flex items-center justify-center rounded-full hover:opacity-90 transition-opacity"><Mail size={18} /></button>
                         </div>
                     </div>
 
@@ -398,11 +398,7 @@ export const BlogPost: React.FC = () => {
                         </div>
                     </div>
                     
-                    {/* Ad Vertical Placeholder */}
-                    <div className="h-[400px] bg-gray-50 border border-gray-200 flex flex-col items-center justify-center text-center p-4 text-gray-400 text-sm rounded-lg">
-                         <span>Espace Publicitaire</span>
-                         <span className="text-xs mt-2">300x400</span>
-                    </div>
+
 
                 </aside>
             </div>

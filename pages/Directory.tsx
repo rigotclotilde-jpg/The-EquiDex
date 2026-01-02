@@ -205,6 +205,11 @@ export const Directory: React.FC = () => {
                             Affichage de <strong className="text-black">{filteredStables.length}</strong> établissements
                         </p>
                         <div className="flex items-center gap-4">
+                            {user && user.type === 'pro' && (
+                                <Link to="/edit-profile">
+                                    <Button variant="primary" className="hidden md:inline-flex">Créer / Modifier ma fiche écurie</Button>
+                                </Link>
+                            )}
                             <div className="flex items-center gap-2">
                                 <label htmlFor="sort" className="text-xs font-bold uppercase text-gray-400">Trier par</label>
                                 <select id="sort" className="border-none bg-transparent text-sm font-bold text-black focus:ring-0 cursor-pointer hover:text-amber-600 transition-colors">
