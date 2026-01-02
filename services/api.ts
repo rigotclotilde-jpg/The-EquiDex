@@ -169,6 +169,52 @@ export const api = {
             return { ...jobData, id: data.id, date: "À l'instant", isPremium: false, image: "https://picsum.photos/100/100?random=99", perks: [] };
         }
     },
+    // --- STABLES (Annuaire) ---
+    stables: {
+        getAll: async (): Promise<any[]> => {
+            try {
+                const { data, error } = await supabase
+                    .from('stables')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error || !data) return [];
+                return data;
+            } catch (error) {
+                console.warn('Erreur chargement stables:', error);
+                return [];
+            }
+        },
+        getByOwner: async (ownerId: string) => {
+            try {
+                const { data, error } = await supabase
+                    .from('stables')
+                    .select('*')
+                    .eq('user_id', ownerId)
+                    .single();
+
+                if (error) return null;
+                return data;
+            } catch (error) {
+                console.warn('Erreur getByOwner:', error);
+                return null;
+            }
+        },
+        upsert: async (stableData: any) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Non connecté');
+
+            const payload = { ...stableData, user_id: user.id };
+            const { data, error } = await supabase
+                .from('stables')
+                .upsert(payload, { onConflict: 'user_id' })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data;
+        }
+    },
     chat: {
         sendMessage: async (history: ChatMessage[], newMessage: string): Promise<string> => {
             try {

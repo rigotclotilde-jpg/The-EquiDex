@@ -1,11 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Search, Star, Filter, Crown, Bed, Ruler, Euro, Building, Map as MapIcon, List, Check } from 'lucide-react';
 import { Stable } from '../types';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { useUserContext } from '../context/UserContext';
+import { api } from '../services/api';
 
-const MOCK_STABLES: Stable[] = [
+// Initial mock data kept for fallback during development
+const DEFAULT_STABLES: Stable[] = [
     {
         id: 1,
         name: "Haras de la Forêt",
@@ -33,34 +36,6 @@ const MOCK_STABLES: Stable[] = [
         facilities: ["Manège Olympique", "Piste Galop", "Restaurant"],
         imageUrl: "https://picsum.photos/400/300?random=13",
         isPremium: true
-    },
-    {
-        id: 2,
-        name: "Domaine des 3 Chevaux",
-        location: "95200 Sarcelles, Val-d'Oise",
-        distance: "12.1 km",
-        specialty: "Cours, Compétition",
-        type: "Centre Équestre",
-        rating: 4.5,
-        reviewsCount: 154,
-        price: 450,
-        facilities: ["Carrière", "Poney-Club"],
-        imageUrl: "https://picsum.photos/400/300?random=11",
-        isPremium: false
-    },
-    {
-        id: 3,
-        name: "Les Prés de la Nature",
-        location: "77130 Montereau, Seine-et-Marne",
-        distance: "25.0 km",
-        specialty: "Pension Pré",
-        type: "Écurie de Propriétaires",
-        rating: 5.0,
-        reviewsCount: 12,
-        price: 320,
-        facilities: ["Paddock Paradise", "Accès Balades"],
-        imageUrl: "https://picsum.photos/400/300?random=12",
-        isPremium: false
     }
 ];
 
@@ -74,8 +49,36 @@ export const Directory: React.FC = () => {
         infra: [] as string[]
     });
 
-    // Filter Logic (Mock)
-    const filteredStables = MOCK_STABLES.filter(stable => {
+    const [stables, setStables] = useState<Stable[]>(DEFAULT_STABLES);
+    const { user } = useUserContext();
+
+    useEffect(() => {
+        (async () => {
+            const data = await api.stables.getAll();
+            if (data && data.length) {
+                // Normalize to Stable type where possible
+                const mapped = data.map((s: any) => ({
+                    id: s.id,
+                    name: s.name,
+                    location: s.location || s.address || 'France',
+                    distance: s.distance || 'N/A',
+                    specialty: s.specialty || s.type || '',
+                    type: s.type || 'Écurie',
+                    rating: s.rating || 0,
+                    reviewsCount: s.reviews_count || 0,
+                    price: s.price || 0,
+                    facilities: s.facilities || [],
+                    imageUrl: s.image_url || `https://picsum.photos/400/300?random=${s.id}`,
+                    isPremium: s.is_premium || false,
+                    description: s.description || ''
+                }));
+                setStables(mapped);
+            }
+        })();
+    }, []);
+
+    // Filter Logic
+    const filteredStables = stables.filter(stable => {
         if (stable.price && stable.price > priceRange) return false;
         if (filters.location && !stable.location.toLowerCase().includes(filters.location.toLowerCase())) return false;
         if (filters.keyword && !stable.name.toLowerCase().includes(filters.keyword.toLowerCase())) return false;
