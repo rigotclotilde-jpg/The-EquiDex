@@ -111,7 +111,7 @@ export const ProDashboard: React.FC = () => {
             // Reset form
             setJobForm({
                 title: '',
-                company: 'Haras de la Forêt',
+                company: '',
                 location: '',
                 type: 'CDI',
                 salary: '',
@@ -129,11 +129,11 @@ export const ProDashboard: React.FC = () => {
         }
     };
 
-    const stats = [
-        { id: 1, label: "Nouveaux Prospects", value: "15", icon: <Users className="text-amber-600" size={24} />, trend: "+12%" },
-        { id: 2, label: "Stages Confirmés", value: "4", icon: <CalendarCheck className="text-amber-600" size={24} />, trend: "Stable" },
-        { id: 3, label: "Vues de la Fiche", value: "3.2k", icon: <Eye className="text-amber-600" size={24} />, trend: "+28%" },
-        { id: 4, label: "Note Moyenne", value: "4.8", icon: <Star className="text-yellow-400 fill-current" size={24} />, subtext: "85 Avis" },
+    const stats: { id: number; label: string; value: string; icon: JSX.Element; trend?: string; subtext?: string }[] = [
+        { id: 1, label: "Nouveaux Prospects", value: "—", icon: <Users className="text-amber-600" size={24} /> },
+        { id: 2, label: "Stages Confirmés", value: "—", icon: <CalendarCheck className="text-amber-600" size={24} /> },
+        { id: 3, label: "Vues de la Fiche", value: "—", icon: <Eye className="text-amber-600" size={24} /> },
+        { id: 4, label: "Note Moyenne", value: "—", icon: <Star className="text-yellow-400 fill-current" size={24} /> },
     ];
 
     return (
@@ -226,7 +226,7 @@ export const ProDashboard: React.FC = () => {
                                         <li className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer group">
                                             <div className="mt-1 w-5 h-5 rounded-full border-2 border-gray-300 group-hover:border-amber-500 flex-shrink-0"></div>
                                             <div>
-                                                <p className="text-slate-800 font-medium group-hover:text-amber-700 transition-colors">Répondre à l'avis de M. Dubois</p>
+                                                <p className="text-slate-800 font-medium group-hover:text-amber-700 transition-colors">Répondre à un avis récent</p>
                                                 <p className="text-xs text-gray-500">Reçu hier • Note: 4/5</p>
                                             </div>
                                         </li>
@@ -273,7 +273,7 @@ export const ProDashboard: React.FC = () => {
                                     </div>
                                     <div className="flex-grow">
                                         <div className="flex justify-between items-start">
-                                            <h4 className="font-bold text-slate-900">Mme. Sophie D.</h4>
+                                            <h4 className="font-bold text-slate-900">Client récent</h4>
                                             <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded">Nouveau</span>
                                         </div>
                                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">
@@ -292,7 +292,7 @@ export const ProDashboard: React.FC = () => {
                                     </div>
                                     <div className="flex-grow">
                                         <div className="flex justify-between items-start">
-                                            <h4 className="font-bold text-slate-900">M. Thomas V.</h4>
+                                            <h4 className="font-bold text-slate-900">Demandeur</h4>
                                             <span className="text-xs text-gray-400">Lu</span>
                                         </div>
                                         <p className="text-sm text-gray-600 mt-1">

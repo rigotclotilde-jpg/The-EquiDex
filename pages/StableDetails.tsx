@@ -132,7 +132,7 @@ export const StableDetails: React.FC = () => {
                     location: fresh.location || fresh.address || '',
                     specialty: fresh.specialty || fresh.type || '',
                     rating: fresh.rating || 0,
-                    imageUrl: fresh.image_url || fresh.imageUrl || (fresh.images && fresh.images[0]) || `https://picsum.photos/1200/400?random=${fresh.id}`,
+                    imageUrl: fresh.image_url || fresh.imageUrl || (fresh.images && fresh.images[0]) || '',
                     distance: fresh.distance || undefined,
                     type: fresh.type || undefined,
                     facilities: fresh.facilities || fresh.amenities || [],
@@ -174,7 +174,7 @@ export const StableDetails: React.FC = () => {
                         location: data.location || data.address || '',
                         specialty: data.specialty || data.type || '',
                         rating: data.rating || 0,
-                        imageUrl: data.image_url || data.imageUrl || (data.images && data.images[0]) || `https://picsum.photos/1200/400?random=${data.id}`,
+                        imageUrl: data.image_url || data.imageUrl || (data.images && data.images[0]) || '',
                         distance: data.distance || undefined,
                         type: data.type || undefined,
                         facilities: data.facilities || data.amenities || [],
@@ -201,7 +201,7 @@ export const StableDetails: React.FC = () => {
     return (
         <div className="bg-slate-50 min-h-screen pb-12">
             {/* Hero Section */}
-            <div className="relative h-96 md:h-[500px] bg-cover bg-center flex items-end text-white" style={{ backgroundImage: `url("${stable?.imageUrl || 'https://picsum.photos/1920/600?random=15'}")` }}>
+            <div className={`relative h-96 md:h-[500px] flex items-end ${stable?.imageUrl ? 'bg-cover bg-center text-white' : 'bg-slate-200 text-slate-900'}`} style={stable?.imageUrl ? { backgroundImage: `url("${stable.imageUrl}")` } : undefined}>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                 
                 <div className="relative z-10 container mx-auto px-4 pb-8 md:pb-12">
@@ -576,21 +576,18 @@ export const StableDetails: React.FC = () => {
                                     
                                     <div className="flex items-center gap-6 mb-8 bg-slate-50 p-6 rounded-xl">
                                         <div className="text-center">
-                                            <div className="text-5xl font-bold text-slate-800 mb-1">4.8</div>
+                                            <div className="text-5xl font-bold text-slate-800 mb-1">{stable?.rating ? stable.rating.toFixed(1) : '—'}</div>
                                             <div className="flex justify-center gap-1 text-yellow-400 mb-1">
-                                                <Star fill="currentColor" size={16} />
-                                                <Star fill="currentColor" size={16} />
-                                                <Star fill="currentColor" size={16} />
-                                                <Star fill="currentColor" size={16} />
-                                                <Star fill="currentColor" size={16} className="text-yellow-400/50" />
+                                                {/* Stars could be rendered here based on rating when available */}
                                             </div>
-                                            <div className="text-xs text-gray-500">85 avis</div>
+                                            <div className="text-xs text-gray-500">{stable?.reviewsCount ? `${stable.reviewsCount} avis` : 'Aucun avis'}</div>
                                         </div>
                                         <div className="flex-grow border-l border-gray-200 pl-6">
-                                            <p className="text-gray-600 italic text-lg leading-relaxed">
-                                                "Ambiance familiale et installations impeccables. Le coaching dressage avec Monsieur Lenoir est exceptionnel. Mon cheval n'a jamais été aussi bien."
-                                            </p>
-                                            <div className="mt-4 font-bold text-slate-800">— Sophie D. <span className="text-xs font-normal text-gray-500 ml-2">Propriétaire depuis 3 ans</span></div>
+                                            {stable?.reviewsCount ? (
+                                                <p className="text-gray-600 italic text-lg leading-relaxed">Des avis sont disponibles pour cet établissement.</p>
+                                            ) : (
+                                                <p className="text-gray-600">Aucun avis pour le moment.</p>
+                                            )}
                                         </div>
                                     </div>
                                     

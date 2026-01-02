@@ -123,11 +123,13 @@ export const JobDetails: React.FC = () => {
                             ))}
                         </ul>
 
-                         {/* Images - Mocked for consistency if not present */}
+                         {/* Images */}
                         <div className="grid grid-cols-3 gap-4 my-8">
-                             <img src={job.image} alt="Illustration poste" className="w-full h-32 object-cover rounded-lg shadow-sm" />
-                             <img src="https://picsum.photos/400/300?random=88" alt="Illustration" className="w-full h-32 object-cover rounded-lg shadow-sm" />
-                             <img src="https://picsum.photos/400/300?random=99" alt="Illustration" className="w-full h-32 object-cover rounded-lg shadow-sm" />
+                            {job.image ? (
+                                <img src={job.image} alt="Illustration poste" className="w-full h-32 object-cover rounded-lg shadow-sm" />
+                            ) : (
+                                <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">Pas d'image</div>
+                            )}
                         </div>
                     </section>
 
@@ -205,7 +207,11 @@ export const JobDetails: React.FC = () => {
                     {/* Company Card */}
                     <div className="bg-white border border-gray-200 p-6 shadow-sm rounded-lg">
                         <div className="flex items-center gap-4 mb-6">
-                            <img src={job.image} alt="Logo" className="w-16 h-16 rounded-full object-cover border border-gray-100" />
+                            {job.image ? (
+                                <img src={job.image} alt="Logo" className="w-16 h-16 rounded-full object-cover border border-gray-100" />
+                            ) : (
+                                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">Pas d'image</div>
+                            )}
                             <div>
                                 <h3 className="font-bold text-slate-900">{job.company}</h3>
                                 <p className="text-xs text-amber-600 font-bold uppercase tracking-wide">Recruteur Vérifié</p>

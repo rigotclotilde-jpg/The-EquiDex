@@ -136,7 +136,7 @@ export const api = {
                     benefits: [],
                     perks: [],
                     isPremium: false,
-                    image: `https://picsum.photos/100/100?random=${job.id}`
+                    image: job.image || ''
                 }));
             } catch (error) {
                 console.warn("Erreur chargement jobs:", error);
@@ -169,7 +169,7 @@ export const api = {
                 .single();
 
             if (error) throw error;
-            return { ...jobData, id: data.id, date: "À l'instant", isPremium: false, image: "https://picsum.photos/100/100?random=99", perks: [] };
+            return { ...jobData, id: data.id, date: "À l'instant", isPremium: false, image: (data as any)?.image || '', perks: [] };
         }
     },
     // --- STABLES (Annuaire) ---

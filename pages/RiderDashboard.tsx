@@ -118,9 +118,9 @@ export const RiderDashboard: React.FC = () => {
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase mb-2">Statut Actuel</p>
                                 <h3 className="text-2xl font-serif font-bold text-gray-500 mb-2 flex items-center justify-center gap-2">
-                                    <Trophy className="fill-current" /> Éperon Argent
+                                    <Trophy className="fill-current" /> Statut : —
                                 </h3>
-                                <p className="text-sm text-gray-600 mb-4 leading-relaxed">Débloqué : Badges de Confiance, 1 Article Premium / jour.</p>
+                                <p className="text-sm text-gray-600 mb-4 leading-relaxed">Statut de fidélité et avantages affichés ici une fois disponibles.</p>
                             </div>
                             <Link to="/loyalty" className="text-xs font-bold text-equidex-gold uppercase tracking-wide hover:underline border border-equidex-gold px-4 py-2 inline-block transition-colors hover:bg-equidex-gold hover:text-white">
                                 Voir les avantages
@@ -131,11 +131,11 @@ export const RiderDashboard: React.FC = () => {
                         <div className="bg-[#FAFAFA] p-6 border border-gray-100 text-center flex flex-col justify-between h-full">
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase mb-2">Progrès vers le Vermeil</p>
-                                <h3 className="text-2xl font-serif font-bold text-equidex-gold mb-4">350 Pts. Ferrure</h3>
+                                <h3 className="text-2xl font-serif font-bold text-equidex-gold mb-4">— Pts.</h3>
                                 <div className="w-full bg-gray-200 h-1.5 mb-3 rounded-none">
-                                    <div className="bg-equidex-gold h-1.5 rounded-none" style={{ width: '50%' }}></div>
+                                    <div className="bg-equidex-gold h-1.5 rounded-none" style={{ width: '0%' }}></div>
                                 </div>
-                                <p className="text-sm text-gray-500">Objectif : <strong className="text-black">700 FH</strong></p>
+                                <p className="text-sm text-gray-500">Objectif : <strong className="text-black">—</strong></p>
                             </div>
                             <p className="text-xs text-gray-400 mt-4">Encore 350 FH pour atteindre le niveau supérieur !</p>
                         </div>
@@ -148,7 +148,7 @@ export const RiderDashboard: React.FC = () => {
                         <ul className="space-y-3">
                             <li className="flex items-center gap-3 text-sm text-gray-600 border-b border-dotted border-gray-200 pb-2">
                                 <PlusCircle className="text-equidex-gold" size={16} />
-                                <span>Avis posté sur <strong>Haras de la Vallée</strong> : <span className="font-bold text-equidex-gold">+10 FH</span> (Il y a 2 jours)</span>
+                                <span>Avis posté : <span className="font-bold text-equidex-gold">+10 FH</span> (Il y a 2 jours)</span>
                             </li>
                             <li className="flex items-center gap-3 text-sm text-gray-600 border-b border-dotted border-gray-200 pb-2">
                                 <PlusCircle className="text-equidex-gold" size={16} />

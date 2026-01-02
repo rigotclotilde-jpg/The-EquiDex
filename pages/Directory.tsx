@@ -7,8 +7,8 @@ import { Button } from '../components/Button';
 import { useUserContext } from '../context/UserContext';
 import { api } from '../services/api';
 
-// Initial mock data kept for fallback during development (removed vitrine entries)
-const DEFAULT_STABLES: Stable[] = [];
+// No demo stables: Directory displays only real data from API
+const DEFAULT_STABLES: Stable[] = []; 
 
 export const Directory: React.FC = () => {
     const [priceRange, setPriceRange] = useState(1000);
@@ -39,7 +39,7 @@ export const Directory: React.FC = () => {
                     reviewsCount: s.reviews_count || 0,
                     price: s.price || 0,
                     facilities: s.facilities || [],
-                    imageUrl: s.image_url || `https://picsum.photos/400/300?random=${s.id}`,
+                    imageUrl: s.image_url || '',
                     isPremium: s.is_premium || false,
                     description: s.description || '',
                     ownerType: s.profiles?.role || 'unknown'
@@ -212,11 +212,17 @@ export const Directory: React.FC = () => {
                             >
                                 {/* Image Section */}
                                 <div className="w-full md:w-2/5 relative h-64 md:h-auto overflow-hidden">
-                                    <img 
-                                        src={stable.imageUrl} 
-                                        alt={stable.name} 
-                                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                                    />
+                                    {stable.imageUrl ? (
+                                        <img 
+                                            src={stable.imageUrl} 
+                                            alt={stable.name} 
+                                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                            <span className="text-sm">Pas d'image</span>
+                                        </div>
+                                    )}
                                     {stable.isPremium && (
                                         <div className="absolute top-0 left-0 bg-amber-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 flex items-center gap-1 shadow-sm">
                                             <Crown size={12} /> Premium
@@ -296,14 +302,8 @@ export const Directory: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Pagination Mock */}
-                    <div className="mt-12 flex justify-center gap-2 font-sans">
-                        <button className="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-400 hover:text-black hover:border-black transition-colors">1</button>
-                        <button className="w-10 h-10 flex items-center justify-center border border-black bg-black text-white">2</button>
-                        <button className="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-400 hover:text-black hover:border-black transition-colors">3</button>
-                        <span className="flex items-end px-2 text-gray-400">...</span>
-                        <button className="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-400 hover:text-black hover:border-black transition-colors">12</button>
-                    </div>
+                    {/* Pagination: rendered dynamically when server-side pagination is available */}
+                    
 
                 </section>
             </div>

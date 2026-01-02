@@ -309,14 +309,20 @@ export const EditProfile: React.FC = () => {
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {[1, 2].map((i) => (
-                                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden shadow-sm group">
-                                        <img src={`https://picsum.photos/400/400?random=${i+10}`} alt="Aperçu" className="w-full h-full object-cover" />
-                                        <button type="button" aria-label="Supprimer la photo" className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <X size={14} />
-                                        </button>
+                                {initialValues?.images && initialValues.images.length > 0 ? (
+                                    initialValues.images.map((img: string, idx: number) => (
+                                        <div key={idx} className="relative aspect-square rounded-lg overflow-hidden shadow-sm group">
+                                            <img src={img} alt={`Aperçu ${idx+1}`} className="w-full h-full object-cover" />
+                                            <button type="button" aria-label="Supprimer la photo" className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="relative aspect-square rounded-lg overflow-hidden shadow-sm bg-gray-100 flex items-center justify-center text-gray-400">
+                                        <span>Aucune image</span>
                                     </div>
-                                ))}
+                                )}
                             </div>
 
                             <div className="pt-6">
