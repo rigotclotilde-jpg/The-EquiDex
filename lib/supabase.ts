@@ -1,9 +1,9 @@
 ﻿import { createClient } from '@supabase/supabase-js';
 
 // Configuration Supabase
-// Les cl├®s sont charg├®es depuis le fichier .env (s├®curis├®)
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+// Les clés sont chargées depuis le fichier .env (sécurisé)
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || process.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 // V├®rification de la configuration
 const isConfigured = supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http');

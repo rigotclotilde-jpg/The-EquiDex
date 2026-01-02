@@ -171,35 +171,24 @@ export const api = {
     },
     chat: {
         sendMessage: async (history: ChatMessage[], newMessage: string): Promise<string> => {
-            const ai = getAI();
-
-            if (!ai) {
-                return "Le service EquiBot est temporairement indisponible (Clé API manquante ou erreur configuration).";
-            }
-
             try {
-                // Préparation de l'historique pour Gemini (on exclut le message de bienvenue s'il est artificiel)
-                const historyForModel = history
-                    .filter(msg => msg.id !== 'welcome')
-                    .map(msg => ({
-                        role: msg.role,
-                        parts: [{ text: msg.text }]
-                    }));
-
-                // Création du chat avec instruction système (Personna EquiBot)
-                const chat = ai.chats.create({
-                    model: 'gemini-2.5-flash',
-                    history: historyForModel,
-                    config: {
-                        systemInstruction: "Tu es EquiBot, l'assistant virtuel expert de la plateforme 'The EquiDex'. Tu es un spécialiste mondialement reconnu du monde équestre (soins vétérinaires, technique de monte, équipement, compétitions, réglementation). Ton ton est professionnel, poli, encourageant et concis. Tu réponds toujours en français. Si une question ne concerne pas le monde du cheval, ramène poliment le sujet vers ta passion équestre. N'hésite pas à utiliser des émojis liés aux chevaux 🐴.",
-                    },
+                const resp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ history, message: newMessage })
                 });
 
-                const response = await chat.sendMessage({ message: newMessage });
-                return response.text || "Je n'ai pas réussi à formuler une réponse. Veuillez réessayer.";
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => null);
+                    console.error('Server chat error', err);
+                    return 'Désolé, je rencontre des difficultés techniques pour joindre mon écurie de données. Veuillez vérifier votre connexion ou réessayer plus tard.';
+                }
+
+                const data = await resp.json();
+                return data.text || "Je n'ai pas réussi à formuler une réponse. Veuillez réessayer.";
             } catch (error) {
-                console.error("AI Error:", error);
-                return "Désolé, je rencontre des difficultés techniques pour joindre mon écurie de données. Veuillez vérifier votre connexion ou réessayer plus tard.";
+                console.error('Chat fetch error:', error);
+                return 'Erreur de communication avec le serveur EquiDex.';
             }
         }
     }
